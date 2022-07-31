@@ -8,4 +8,13 @@ urlpatterns = [
     # 登录
     path('api/login/', views.LoginView.as_view()),
     path('login/', views.LoginView.as_view()),
+    # 退出登录
+    path('api/login_out/', views.LoginOutView.as_view()),
+    path('login_out/', views.LoginOutView.as_view()),
+    # 上传头像
+    path('api/upload_img/', views.UploadHeadView.as_view()),
+    path('upload_img/', views.UploadHeadView.as_view()),
+    # 获取头像
+    path('api/get_img/', views.GetHeadImgView.as_view()),
+    path('get_img/', views.GetHeadImgView.as_view()),
 ]
