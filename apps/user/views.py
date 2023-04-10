@@ -1,3 +1,5 @@
+import os.path
+
 from django.shortcuts import render
 from django.views import View
 from django.shortcuts import render, redirect
@@ -7,6 +9,7 @@ from django.contrib.auth import login, authenticate, logout
 
 from user.models import User
 import json
+import base64
 
 
 # 注册类
@@ -30,6 +33,11 @@ class RegisterView(View):
             return http.JsonResponse({'state': 'error', 'tip': '用户名已注册'})
         # 实现状态保持
         login(request, user)
+        with open(f'./apps/user/static/imgs/headimg.jpeg', 'rb') as f1:
+            with open(f'./apps/user/static/headImg/{username}.png', 'wb') as f:
+                f.write(f1.read())
+                f.close()
+            f1.close()
         return http.JsonResponse({'state': 'OK', 'username': username})
 
 
@@ -48,10 +56,11 @@ class LoginView(View):
         # 认证用户:使用账号查询用户是否存在
         user = authenticate(username=username, password=password)
         if user is None:
-            return http.JsonResponse({'state': 'error', 'tip': '用户名或密码错误'})
+            return http.JsonResponse({'state': 'error', 'tip': '手机号或密码错误'})
         # 状态保持
         login(request, user)
-        us = User.objects.get(mobile = username)
+        us = User.objects.get(mobile=username)
+
         return http.JsonResponse({'state': 'OK', 'username': str(us)})
 
 
@@ -72,6 +81,11 @@ class UploadHeadView(View):
     def post(self, request):
         username = json.loads(request.body)['username']
         base64_data = json.loads(request.body)['base64_data']
+        data = base64_data.split(',')[1]
+        image_data = base64.b64decode(data)
+        with open(f'./apps/user/static/headImg/{username}.png', 'wb') as f:
+            f.write(image_data)
+            f.close()
         if(base64_data):
             User.objects.filter(username=username).update(
                 head_img=base64_data
