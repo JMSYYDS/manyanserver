@@ -17,4 +17,10 @@ urlpatterns = [
     # 获取头像
     path('api/get_img/', views.GetHeadImgView.as_view()),
     path('get_img/', views.GetHeadImgView.as_view()),
+    # 修改昵称
+    path('api/update_username/', views.UpdateUsername.as_view()),
+    path('update_username/', views.UpdateUsername.as_view()),
+    # 修改密码
+    path('api/update_password/', views.UpdatePassword.as_view()),
+    path('update_password/', views.UpdatePassword.as_view()),
 ]

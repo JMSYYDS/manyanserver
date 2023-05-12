@@ -108,3 +108,27 @@ class GetHeadImgView(View):
                 return http.JsonResponse({'state': 'error', 'img_data': ''})
         except Exception:
             return http.JsonResponse({'state': 'error', 'message': '没有头像'})
+
+
+# 修改昵称
+class UpdateUsername(View):
+
+    def post(self, request):
+        username = json.loads(request.body)['username']
+        newusername = json.loads(request.body)['newusername']
+        User.objects.filter(username=username).update(username=newusername)
+        path = 'E:/virtualenv/django_project/bookmanager01/apps/user'
+        os.rename(f'{path}/static/headImg/{username}.png', f'{path}/static/headImg/{newusername}.png')
+        return http.JsonResponse({'state': 'OK'})
+
+
+# 修改密码
+class UpdatePassword(View):
+
+    def post(self, request):
+        username = json.loads(request.body)['username']
+        password = json.loads(request.body)['password']
+        user = User.objects.get(username=username)
+        user.set_password(password)
+        user.save()
+        return http.JsonResponse({'state': 'OK'})

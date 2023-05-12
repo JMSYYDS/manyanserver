@@ -1,53 +1,55 @@
 <template>
   <div class="register">
-    <i>用户名：</i>
-    <el-input
-    placeholder="用户名"
-    v-model="username"
-    clearable
-    class="in_user"
-    >
-    </el-input>
-    <br>
-    <i>密码：</i>
-    <el-input
-      placeholder="密码"
-      v-model="password"
-      clearable
-      show-password
-      class="in_pas"
-    >
-    </el-input>
-    <br>
-    <i>确认密码：</i>
-    <el-input
-      placeholder="确认密码"
-      v-model="password2"
-      clearable
-      show-password
-      class="in_pas"
-      @blur="pass2"
-    >
-    </el-input>
-    <em v-show="error_pass_tip" class="er1">两次密码不一致</em>
-    <br>
-    <i>请输入手机号：</i>
-    <el-input
-      placeholder="手机号"
-      v-model="mobile"
-      clearable
-      class="in_pas"
-      @blur="mobile_tip"
-    >
-    </el-input>
-    <em v-show="error_mobile_tip" class="er2">请输入正确的手机号</em>
-    <br>
-    <el-button type="success" class="res_bt" @click="register">立即注册</el-button>
+		<div style="margin-top:15%"></div>
+    <div class="register_box">
+    <div class="register_text">
+        <!-- <div>用户名:</div> -->
+        <input
+				type="text"
+        placeholder="用户名"
+        v-model="username"
+        />
+    </div>
+    <div class="register_text">
+        <!-- <div>密码:</div> -->
+        <input
+				type="password"
+        placeholder="密码"
+        v-model="password"
+        />
+    </div>
+    <div class="register_text">
+        <!-- <div>确认密码:</div> -->
+        <input
+				type="password"
+        placeholder="确认密码"
+        v-model="password2"
+        @blur="pass2"
+        />
+    </div>
+    <div class="register_text">
+        <!-- <div>手机号:</div> -->
+        <input
+        placeholder="手机号"
+        v-model="mobile"
+        @blur="mobile_tip"
+        />
+    </div>
+
+    
+    <div>
+        <el-button type="success" round class="res_bt" @click="register">立即注册</el-button>
+    </div>
     <p v-show="tip" style="font-size: 14px;color: red;">{{ error_tip }}</p>
+    <p class="go_login" @click="go_login">已有账号，前去登录</p>
+		<em v-show="error_pass_tip" class="er1">两次密码不一致</em>
+    <em v-show="error_mobile_tip" class="er2">请输入正确的手机号</em>
+    </div>
   </div>
 </template>
 
 <script>
+import {Register} from '@/api/user'
 export default {
     data() {
         return {
@@ -62,32 +64,43 @@ export default {
         }
     },
     methods: {
-        register () {
-            if((this.username != '') && (this.pass2) && (this.mobile_tip)){
-                let params = {
+        async register () {
+            if((this.username != '') && (this.pass2()) && (this.mobile_tip())){
+                let data = {
                     username: this.username,
                     password: this.password,
                     mobile: this.mobile
                 }
-                this.$axios.post('api/register/', params).then(response => {
-                    if(response.data.state == 'OK'){
-                        localStorage.setItem('token', response.data.username)
-                        this.$store.commit('setus', true)
-                        this.tip = false
-                        this.$router.push('/home')
-                        this.$router.go(0)
-                    }
-                    else{
-                        this.error_tip = response.data.tip
-                        this.tip = true
-                    }
-                })
-                
-                
+                let register_data = await Register(data)
+                if(register_data.state == 'OK'){
+                    localStorage.setItem('token', register_data.username)
+                    localStorage.setItem('mobile', this.mobile)
+                    this.$store.commit('setus', true)
+                    this.tip = false
+                    this.$router.push('/home')
+                    this.$router.go(0)
+                }
+                else{
+                    this.error_tip = register_data.tip
+                    this.tip = true
+                }
+                // this.$axios.post('api/register/', params).then(response => {
+                //     if(response.data.state == 'OK'){
+                //         localStorage.setItem('token', response.data.username)
+                //         this.$store.commit('setus', true)
+                //         this.tip = false
+                //         this.$router.push('/home')
+                //         this.$router.go(0)
+                //     }
+                //     else{
+                //         this.error_tip = response.data.tip
+                //         this.tip = true
+                //     }
+                // })              
             }
             else{
                 this.error_tip = '请输入正确信息'
-                this.tip = true
+								this.$message.warning('请输入正确信息')
             }
         },
         pass2 () {
@@ -96,6 +109,7 @@ export default {
                 if(this.password === '' && this.password2 === ''){
                     return false
                 }
+                return false
             }
             else{
                 this.error_pass_tip = false
@@ -111,6 +125,9 @@ export default {
                 this.error_mobile_tip = true
                 return false
             }
+        },
+        go_login() {
+            this.$router.push('/login')
         }
     },
 }
@@ -120,37 +137,65 @@ export default {
     .register{
         margin-left: auto;
         margin-right: auto;
-        height: 800px;
-        background-image: url('../assets/5.png');
-        background-size: 100% 100%;
-    }
-    .in_user{
-        margin-top: 100px;
-        width: 300px;
-    }
-    .in_pas{
-        margin-top: 30px;
-        width: 300px;
-    }
-    .in_email{
-        margin-top: 30px;
-        width: 300px;
+        width: 100%;
+        height: 100%;
+        position: absolute;
+        background-image: url('../assets/aaa.png');
+        background-size: cover;
     }
     .res_bt{
-        margin-top: 30px;
+        margin-top: 15px;
+        width: 250px;
+        background: linear-gradient(90deg, #85e9e2 3%, #e79bee 97%);
+        box-shadow: 0px 2px 10px 0px rgba(0, 172, 153, 0.4);
+        border: none;
+        cursor: pointer;
     }
     .er1{
-        position: fixed;
-        left: 970px;
-        top: 340px;
+        position: relative;
+        left: 270px;
+        top: -210px;
         font-size: 14px;
         color: red;
+        display: inline-block;
     }
     .er2{
-        position: fixed;
-        left: 970px;
-        top: 410px;
+        position: relative;
+        left: 270px;
+        top: -155px;
         font-size: 14px;
         color: red;
+        display: block;
+    }
+    .register_box{
+        width: 380px;
+        margin: auto;
+    }
+    .register_text{
+        margin-bottom: 20px;
+    }
+		.register_text input{
+			border: 1px solid white;
+      border-radius: 25px;
+			height: 45px;
+			width: 250px;
+			margin-top: 5px;
+			padding-left: 10px;
+			border-radius: 20px;
+			box-sizing: border-box;
+			cursor: pointer;
+			outline: none;
+			background-color: transparent;
+		}
+		.register_text input:focus{
+        border: 1px solid rgb(229, 148, 211);
+    }
+		.go_login{
+			margin-top: 15px;
+			font-size: 14px;
+		}
+    .go_login:hover{
+        cursor: pointer;
+        color: white;
     }
 </style>

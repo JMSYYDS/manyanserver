@@ -1,5 +1,6 @@
 import os
 import re
+from datetime import datetime
 
 import requests
 from lxml import etree
@@ -23,8 +24,9 @@ class All_cartoonView(View):
 
     def post(self, request):
         id = json.loads(request.body)['id']
-        readTime = json.loads(request.body)['readTime']
+        readTimesss = json.loads(request.body)['readTime']
         username = json.loads(request.body)['username']
+        readTime = datetime.now().strftime("%Y-%m-%d %H:%M")
         img, p_data, passage_data = main_res.get_title(id)
         item = HistoryCartoon.objects.values().filter(username=username, cartoonId=id)
         if(item):
@@ -69,6 +71,16 @@ class Love_Cartoon(View):
         description = json.loads(request.body)['description']
         cartoonId = json.loads(request.body)['cartoonId']
         isLove = json.loads(request.body)['isLove']
+        # 手机端收藏
+        if cartoonId == -1:
+            carMess = CartoonMess.objects.values().filter(cartoonName=cartoonName)
+            mobileitem = LoveCartoon.objects.values().filter(username=username, cartoonName=cartoonName)
+            if(mobileitem):
+                LoveCartoon.objects.filter(username=username, cartoonName=cartoonName).update(isLove=isLove)
+            else:
+                LoveCartoon.objects.create(username=username, cartoonName=cartoonName, cartoonImg=cartoonImg,
+                    description=list(carMess)[0]['description'], cartoonId=list(carMess)[0]['cartoonId'], isLove=isLove)
+            return http.JsonResponse({'state': 'OK'})
         item = LoveCartoon.objects.values().filter(username=username, cartoonId=cartoonId)
         if(item):
             LoveCartoon.objects.filter(username=username, cartoonId=cartoonId).update(isLove=isLove)
@@ -85,12 +97,21 @@ class GetLoveCartoon(View):
     def post(self, request):
         username = json.loads(request.body)['username']
         cartoonId = json.loads(request.body)['cartoonId']
+        # 获取收藏漫画列表
         if cartoonId == 10010:
             data = LoveCartoon.objects.values().filter(username=username, isLove=True)
             if data:
                 return http.JsonResponse({'state': 'OK', 'data_love': list(data)})
             else:
                 return http.JsonResponse({'state': 'OK', 'data_love': []})
+        # 手机端查看是否收藏漫画
+        if cartoonId == 20020:
+            cartoonName = json.loads(request.body)['cartoonName']
+            mobileitem = LoveCartoon.objects.values().filter(username=username, cartoonName=cartoonName)
+            if(mobileitem):
+                return http.JsonResponse({'state': 'OK', 'isLove': list(mobileitem)[0]['isLove'], 'data_love': list(mobileitem)[0]})
+            else:
+                return http.JsonResponse({'state': 'OK', 'isLove': False})
         item = LoveCartoon.objects.values().filter(username=username, cartoonId=cartoonId)
         if(item):
             return http.JsonResponse({'state': 'OK', 'isLove': list(item)[0]['isLove'], 'data_love': list(item)[0]})
@@ -120,7 +141,7 @@ class SetCartoon(View):
         # print(str)
         # 存连载漫画到数据库
         data_list2 = test_download.run2()
-        print(data_list2[0])
+        # print(data_list2[0])
         for data in data_list2:
             data_str = re.sub('[^\u4e00-\u9fa5^a-z^A-Z^0-9]+', '', data["title"])
             if not os.path.exists(f'./static/cartoon_resources/{data_str}'):
@@ -129,8 +150,8 @@ class SetCartoon(View):
                 with open(f'./static/cartoon_resources/{data_str}/{data_str}.jpg', 'wb') as f:
                     f.write(res.content)
                     f.close()
-            # cartoonimg = f'http://192.168.44.1:8000/static/cartoon_resources/{data_str}/{data_str}.jpg'
-            # CartoonMess.objects.create(cartoonId=data['id'], cartoonName=data_str, cartoonImg=cartoonimg)
+            # cartoonimg = f'/static/cartoon_resources/{data_str}/{data_str}.jpg'
+            # CartoonMess.objects.filter(cartoonId=data['id']).update(cartoonImg=cartoonimg)
 
         # 存完结漫画到数据库
         # data_list3 = test_download.run3()
@@ -153,15 +174,29 @@ class SetCartoon(View):
             # CartoonMess.objects.filter(cartoonId=data['id']).update(description=p_data[0]['jianjie'],
             #                                                      cartoonAuthor=p_data[0]['author'],
             #                                                      cartoonState=p_data[0]['state'],
-            #                                                      updateTime=p_data[0]['update_time'])
+            #                                                      updateTime=p_data[0]['update_time'],
+            #                                                      cartoonTag=p_data[0]['tag'])
             print('正在下载...',data_str)
-            for index, passagelist in enumerate(passage_data):
-                passagelist_str = f'{index}、' + re.sub('[^\u4e00-\u9fa5^a-z^A-Z^0-9]+', '', passagelist['name'])
-                test_download.get_img(passagelist['idx'], passagelist['passage'], data_str, passagelist_str)
+            cartoon_pages = os.listdir(f'./static/cartoon_resources/{data_str}')
+            new_cartoon_pages = []
+            for item in cartoon_pages:
+                try:
+                    new_cartoon_pages.append(item.split('、')[1])
+                except:
+                    break
+            new_passage_data = passage_data[::-1]
+            for index, passagelist in enumerate(new_passage_data):
+                passage_name = re.sub('[^\u4e00-\u9fa5^a-z^A-Z^0-9]+', '', passagelist['name'])
+                if passage_name in new_cartoon_pages:
+                    continue
+                else:
+                    passagelist_str = f'{index}、' + passage_name
+                    test_download.get_img(passagelist['idx'], passagelist['passage'], data_str, passagelist_str)
         print("完成！")
         return http.JsonResponse({'state': 'OK'})
 
 
+# 手机端获取全部漫画信息
 class MobileGetCartoon(View):
     def get(self, request):
         cartoon_list = []
@@ -174,7 +209,8 @@ class MobileGetCartoon(View):
                 cartoon_list.append({
                     'cartoonName': i,
                     'id': idx,
-                    'cartoonImg': f'http://manyan.w1.luyouxia.net/static/cartoon_resources/{i}/{i}.jpg'
+                    # 'cartoonImg': f'http://manyan.w1.luyouxia.net/static/cartoon_resources/{i}/{i}.jpg'
+                    'cartoonImg': f'/static/cartoon_resources/{i}/{i}.jpg'
                 })
                 idx = idx + 1
 
@@ -184,6 +220,7 @@ class MobileGetCartoon(View):
         pass
 
 
+# 手机端获取第一章节漫画及漫画目录
 class MobileGetImgs(View):
     def get(self, request):
         pass
@@ -209,10 +246,11 @@ class MobileGetImgs(View):
         img_list = sorted(img_list)
         images_data = []
         for i in img_list:
-            images_data.append(f'http://manyan.w1.luyouxia.net/static/cartoon_resources/{cartoonName}/{page}/{str(i)}.jpg')
+            images_data.append(f'/static/cartoon_resources/{cartoonName}/{page}/{str(i)}.jpg')
         return http.JsonResponse({'state': 'OK', 'images_data': images_data, 'mulu_data': mulu_data, 'now_page': page})
 
 
+# 手机端获取某一章节漫画
 class MobileNextPage(View):
     def get(self, request):
         pass
@@ -227,5 +265,66 @@ class MobileNextPage(View):
         img_list = sorted(img_list)
         images_data = []
         for i in img_list:
-            images_data.append(f'http://manyan.w1.luyouxia.net/static/cartoon_resources/{cartoonName}/{page}/{str(i)}.jpg')
+            images_data.append(f'/static/cartoon_resources/{cartoonName}/{page}/{str(i)}.jpg')
         return http.JsonResponse({'state': 'OK', 'images_data': images_data, 'now_page': page})
+
+
+# 手机端增加浏览历史
+class MobileAddHistory(View):
+    def get(self, request):
+        pass
+
+    def post(self, request):
+        username = json.loads(request.body)['username']
+        cartoonName = json.loads(request.body)['cartoonName']
+        cartoonImg = json.loads(request.body)['cartoonImg']
+        readTimemobile = json.loads(request.body)['readTime']
+        readTime = datetime.now().strftime("%Y-%m-%d %H:%M")
+        item = HistoryCartoon.objects.values().filter(username=username, cartoonName=cartoonName)
+        if(item):
+            HistoryCartoon.objects.filter(username=username, cartoonName=cartoonName).update(readTime=readTime)
+        else:
+            carMess = CartoonMess.objects.values().filter(cartoonName=cartoonName)
+            HistoryCartoon.objects.create(username=username, cartoonName=cartoonName, cartoonImg=cartoonImg,
+                description=list(carMess)[0]['description'], cartoonId=list(carMess)[0]['cartoonId'], readTime=readTime)
+        return http.JsonResponse({'state': 'OK'})
+
+
+# 获取本地所有漫画信息
+class LocalGetCartoon(View):
+    def get(self, request):
+        manhua_data = CartoonMess.objects.values()
+        return http.JsonResponse({'state': 'OK', 'manhua_list': list(manhua_data)})
+
+    def post(self, request):
+        pass
+
+
+# 分类漫画获取
+class GetFilterCartoon(View):
+    def get(self, request):
+        pass
+
+    def post(self, request):
+        cartoonTag = json.loads(request.body)['cartoonTag']
+        cartoonState = json.loads(request.body)['cartoonState']
+        cartoon_list = []
+        idx = 1
+        all_cartoon_list = os.listdir('./static/cartoon_resources')
+        for i in all_cartoon_list:
+            cartoon_item = os.listdir(f'./static/cartoon_resources/{i}')
+            if len(cartoon_item) > 1:
+                cartoon_list.append(i)
+                idx = idx + 1
+        if cartoonTag=='全部' and cartoonState=='全部':
+            cartoonData = CartoonMess.objects.values()
+        elif cartoonTag=='全部':
+            cartoonData = CartoonMess.objects.values().filter(cartoonState=cartoonState)
+        elif cartoonState=='全部':
+            cartoonData = CartoonMess.objects.values().filter(cartoonTag__contains=cartoonTag)
+        else:
+            cartoonData = CartoonMess.objects.values().filter(cartoonTag__contains=cartoonTag, cartoonState=cartoonState)
+        cartoonData = list(cartoonData)
+        cartoon_data = [val for val in cartoonData if val['cartoonName'] in cartoon_list]
+        # print(len(cartoon_data))
+        return http.JsonResponse({'state': 'OK', 'data': cartoon_data})

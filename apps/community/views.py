@@ -5,6 +5,7 @@ from community.models import AllEssay, Comment, Support, supportComment
 
 import json
 import random
+from datetime import datetime
 
 
 # 文章图片上传方法
@@ -175,9 +176,10 @@ class SetEssayComment(View):
     def post(self, request):
         essayId = json.loads(request.body)['essayId']
         commentContent = json.loads(request.body)['commentContent']
-        commentTime = json.loads(request.body)['commentTime']
+        commentTimesss = json.loads(request.body)['commentTime']
         commentAuthor = json.loads(request.body)['commentAuthor']
         commentClicks = json.loads(request.body)['commentClicks']
+        commentTime = datetime.now().strftime("%Y-%m-%d %H:%M")
         Comment.objects.create(essayId=essayId, commentContent=commentContent, commentTime=commentTime, commentAuthor=commentAuthor, commentClicks=commentClicks)
         return http.JsonResponse({'state': 'OK'})
 

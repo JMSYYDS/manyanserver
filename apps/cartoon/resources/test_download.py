@@ -28,6 +28,7 @@ def get_img(idx, passage, cartoonName, passageName):
         el_list1 = html.xpath('//*[@id="content"]/div[2]/div/div/img')
 
         os.makedirs(f'./static/cartoon_resources/{cartoonName}/{passageName}')
+        print(f'正在下载...{cartoonName}--{passageName}')
         for index, i in enumerate(el_list1):
             img_url = i.xpath('./@data-original')[0]
             res = requests.get(img_url)
@@ -132,10 +133,13 @@ def get_title(id):
         temp = {}
         temp['id'] = idx
         temp['title'] = el.xpath('./h1/text()')[0]
-        temp['author'] = el.xpath('./p/a/text()')[0]
-        temp['state'] = el.xpath('./p/span/span/text()')[0]
-        temp['update_time'] = el.xpath('./p/span[2]/text()')[0]
+        temp['author'] = el.xpath('./p[1]/a/text()')[0]
+        temp['state'] = el.xpath('./p[2]/span/span/text()')[0]
+        temp['update_time'] = el.xpath('./p[2]/span[2]/text()')[0]
         temp['jianjie'] = el.xpath('./p[4]/text()')[0]
+        taglist = el.xpath('./p[3]/span/a/text()')
+        tag = '、'.join(taglist)
+        temp['tag'] = tag
         p_data.append(temp)
         idx += 1
     el_list2 = html.xpath('//*[@id="detail-list-select"]/li/h2/a')

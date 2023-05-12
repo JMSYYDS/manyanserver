@@ -1,5 +1,5 @@
 <template>
-<div>
+<div class="main_content">
   <div class="block">
     <el-carousel :interval="4000" type="card" height="300px" trigger="click">
         <el-carousel-item v-for="item in 6" :key="item">
@@ -11,15 +11,15 @@
     <el-button type="text" style="float: left;font-size: 15px" @click="show_all">全部</el-button>
     <el-button type="text" style="float: left;font-size: 15px" @click="lianzai_all">正连载</el-button>
     <el-button type="text" style="float: left;font-size: 15px" @click="finall_all">已完结</el-button>
-    <el-button type="primary" plain class="ser_bt" @click="serach">搜索</el-button>
+    <el-button type="primary" plain class="ser_bt" @click="serach" icon="el-icon-search">搜索</el-button>
     <el-input v-model="ser_data" placeholder="请输入内容" class="ser_in"></el-input>
   </div>
   <div class="box_body">
-      <div class="lis" v-for="item in arr.slice((currentPage-1)*pagesize,currentPage*pagesize)" :key="item.id">
-          <a :href="'#/cartoon/book/'+item.id">
+      <div class="lis" v-for="item in feiye" :key="item.id">
+          <a :href="'#/cartoon/book/'+item.id" target="_blank">
             <img :src="item.image">
           </a>
-          <a :href="'#/cartoon/book/'+item.id" class="cartoon_name">{{ item.title }}</a>
+          <a :href="'#/cartoon/book/'+item.id" class="cartoon_name" target="_blank">{{ item.title }}</a>
           <p style="font-size: 13px">{{ item.describe }}</p>
       </div>
   </div>
@@ -31,11 +31,14 @@
   layout="total,prev,pager,next,jumper"
   :total="arr.length">
   </el-pagination>
+  <br>
+  <br>
 </div>
   
 </template>
 
 <script>
+import {AllCartoon, TypeCartoon} from '@/api/manhua'
 export default {
     data() {
         return {
@@ -53,18 +56,23 @@ export default {
             ser_data: ''
         }
     },
+    computed: {
+        feiye() {
+            return this.arr.slice((this.currentPage-1)*this.pagesize,this.currentPage*this.pagesize)
+        }
+    },
     methods: {
-        get_res() {
-            this.$axios.get('api/main_cartoon/').then(response => {
-                if(response.data.state == 'OK'){
-                    this.arr = response.data.arr
-                    this.all_arr = response.data.arr
-                }
-            })
-            this.$axios.get('api/get_type/').then(response => {
-                this.lianzai_arr = response.data.lianzai_arr
-                this.wanjie_arr = response.data.wanjie_arr
-            })
+        async get_res() {
+            let all_data = await AllCartoon()
+            if(all_data.state == 'OK'){
+                this.arr = all_data.arr
+                this.all_arr = all_data.arr
+            }
+            let type_data = await TypeCartoon()
+            if(type_data.state == 'OK'){
+                this.lianzai_arr = type_data.lianzai_arr
+                this.wanjie_arr = type_data.wanjie_arr
+            }
         },
 
         handleCurrentChange(val) {
@@ -96,7 +104,7 @@ export default {
             this.arr = this.wanjie_arr
         }
     },
-    created() {
+    async mounted() {
         if(sessionStorage.getItem('currentPage')){
             this.currentPage = parseInt(sessionStorage.getItem('currentPage'))
         }
@@ -107,6 +115,12 @@ export default {
 </script>
 
 <style scoped>
+    .main_content{
+        width: 100%;
+        height: 100%;
+        background-image: url('../../assets/registerbck.png');
+        background-size: cover;
+    }
   .el-carousel__item h3 {
     color: #475669;
     font-size: 14px;
@@ -126,16 +140,16 @@ export default {
       width: 80%;
       margin-left: auto;
       margin-right: auto;
-      margin-top: 10px;
+      padding-top: 10px;
   }
   .box_body{
       width: 80%;
       min-height: 200px;
       margin-right: auto;
       margin-left: auto;
-      background-color: white;
+      /* background-color: white; */
       display: flex;
-      justify-content: flex-start;
+      justify-content: space-between;
       flex-wrap: wrap;
       align-content: flex-start;
   }
@@ -173,7 +187,10 @@ export default {
       width: 180px;
       height: 280px;
       margin: 10px;
-      background-color: #E4E7ED;
+      /* background-color: #E4E7ED; */
+  }
+  .lis:hover{
+    box-shadow: 0 2px 4px rgba(0, 0, 0, .12), 0 0 6px rgba(0, 0, 0, .04)
   }
   .lis img{
       width: 180px;
@@ -187,7 +204,7 @@ export default {
       margin-bottom: 5px;
   }
   .cartoon_name:hover{
-      color: red;
+      color: #9ad2c9;
   }
 
   .serach{

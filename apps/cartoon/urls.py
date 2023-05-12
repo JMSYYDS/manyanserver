@@ -32,4 +32,13 @@ urlpatterns = [
     # 手机获取章节跳转漫画资源
     path('api/mobile_get_page_imgs/', views.MobileNextPage.as_view()),
     path('mobile_get_page_imgs/', views.MobileNextPage.as_view()),
+    # 手机端增加浏览历史
+    path('api/mobile_add_history/', views.MobileAddHistory.as_view()),
+    path('mobile_add_history/', views.MobileAddHistory.as_view()),
+    # 获取本地所有漫画信息
+    path('api/local_get_cartoon/', views.LocalGetCartoon.as_view()),
+    path('local_get_cartoon/', views.LocalGetCartoon.as_view()),
+    # 分类漫画获取
+    path('api/get_filter_cartoon/', views.GetFilterCartoon.as_view()),
+    path('get_filter_cartoon/', views.GetFilterCartoon.as_view()),
 ]
